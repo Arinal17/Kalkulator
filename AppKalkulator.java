@@ -17,15 +17,15 @@ public class AppKalkulator extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainPanel;
 
-    private final Color COLOR_BG = new Color(24, 24, 27);
-    private final Color COLOR_BTN_NUM = new Color(44, 45, 51);
-    private final Color COLOR_BTN_TOP = new Color(68, 70, 79);
+    private final Color COLOR_BG = new Color(0, 0, 0);
+    private final Color COLOR_BTN_NUM = new Color(51, 51, 51);
+    private final Color COLOR_BTN_TOP = new Color(100, 100, 100);
     private final Color COLOR_BTN_FUNC = new Color(36, 52, 78);
-    private final Color COLOR_BTN_OP = new Color(10, 132, 255);
+    private final Color COLOR_BTN_OP = new Color(255, 149, 0);
     private final Color COLOR_BTN_EQ = new Color(255, 149, 0);
     private final Color COLOR_TEXT = Color.WHITE;
-    private final Color COLOR_TEXT_MUTED = new Color(150, 150, 160);
-    private final Color COLOR_BADGE = new Color(50, 52, 58);
+    private final Color COLOR_TEXT_MUTED = new Color(150, 150, 150);
+    private final Color COLOR_BADGE = new Color(44, 44, 46);
 
     private final List<String> riwayatOperasiList = new ArrayList<>();
 
@@ -215,7 +215,7 @@ public class AppKalkulator extends JFrame {
                 bg = COLOR_BTN_NUM;
             }
 
-            RoundButton btn = new RoundButton(text, 22, bg);
+            RoundButton btn = new RoundButton(text, 100, bg);
             btn.setFont(new Font("SansSerif", Font.PLAIN, text.length() > 2 ? 18 : 24));
             btn.addActionListener(e -> tekanTombol(e.getActionCommand()));
             keypadPanel.add(btn);
@@ -612,7 +612,7 @@ public class AppKalkulator extends JFrame {
         };
 
         for (String text : convBtns) {
-            RoundButton btn = new RoundButton(text, 22, text.matches("AC|\\+/-|⇅|⌫") ? COLOR_BTN_TOP : COLOR_BTN_NUM);
+            RoundButton btn = new RoundButton(text, 100, text.matches("AC|\\+/-|⇅|⌫") ? COLOR_BTN_TOP : COLOR_BTN_NUM);
             btn.setFont(new Font("SansSerif", Font.PLAIN, 24));
 
             btn.addActionListener(e -> {
