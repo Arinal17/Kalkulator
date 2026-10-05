@@ -1,41 +1,59 @@
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AppKalkulator extends JFrame {
 
+    private static final String ERROR = "Error";
+    private static final int MAX_DIGITS = 15;
+
     private CardLayout cardLayout;
     private JPanel mainPanel;
-    
-    private final Color COLOR_BG = new Color(28, 28, 30);
-    private final Color COLOR_BTN_NUM = new Color(44, 45, 49);
-    private final Color COLOR_BTN_TOP = new Color(64, 66, 73);
+
+    private final Color COLOR_BG = new Color(24, 24, 27);
+    private final Color COLOR_BTN_NUM = new Color(44, 45, 51);
+    private final Color COLOR_BTN_TOP = new Color(68, 70, 79);
+    private final Color COLOR_BTN_FUNC = new Color(36, 52, 78);
     private final Color COLOR_BTN_OP = new Color(10, 132, 255);
+    private final Color COLOR_BTN_EQ = new Color(255, 149, 0);
     private final Color COLOR_TEXT = Color.WHITE;
-    private final Color COLOR_TEXT_MUTED = new Color(150, 150, 150);
+    private final Color COLOR_TEXT_MUTED = new Color(150, 150, 160);
     private final Color COLOR_BADGE = new Color(50, 52, 58);
 
-    private List<String> riwayatOperasiList = new ArrayList<>();
+    private final List<String> riwayatOperasiList = new ArrayList<>();
+
+    // state kalkulator
+    private JTextField displayField;
+    private JLabel historyLabel;
+    private JLabel historyBadge;
+    private double runningTotal = 0;
+    private String operator = "";
+    private boolean mulaiInputBaru = true;
+    private final StringBuilder ekspresi = new StringBuilder();
 
     public AppKalkulator() {
         setTitle("Kalkulator & Converter");
-        setSize(380, 680);
+        setSize(400, 780);
+        setMinimumSize(new Dimension(360, 700));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         getContentPane().setBackground(COLOR_BG);
 
-        JPanel headerPanel = new JPanel(new GridLayout(1, 2));
+        JPanel headerPanel = new JPanel(new GridLayout(1, 2, 8, 0));
         headerPanel.setBackground(COLOR_BG);
         headerPanel.setBorder(new EmptyBorder(15, 20, 10, 20));
 
-        JButton btnMenuCalc = createHeaderButton("Calculator", true);
-        JButton btnMenuConv = createHeaderButton("Converter", false);
+        RoundButton btnMenuCalc = new RoundButton("Calculator", 14, COLOR_BTN_OP);
+        RoundButton btnMenuConv = new RoundButton("Converter", 14, COLOR_BTN_TOP);
+        btnMenuCalc.setFont(new Font("SansSerif", Font.BOLD, 14));
+        btnMenuConv.setFont(new Font("SansSerif", Font.BOLD, 14));
 
         headerPanel.add(btnMenuCalc);
         headerPanel.add(btnMenuConv);
@@ -47,30 +65,69 @@ public class AppKalkulator extends JFrame {
 
         mainPanel.add(createCalculatorPanel(), "Kalkulator");
         mainPanel.add(createConverterPanel(), "Converter");
-        
+
         add(mainPanel, BorderLayout.CENTER);
 
         btnMenuCalc.addActionListener(e -> {
             cardLayout.show(mainPanel, "Kalkulator");
-            btnMenuCalc.setBackground(COLOR_BTN_OP);
-            btnMenuConv.setBackground(COLOR_BTN_TOP);
+            btnMenuCalc.setBase(COLOR_BTN_OP);
+            btnMenuConv.setBase(COLOR_BTN_TOP);
         });
 
         btnMenuConv.addActionListener(e -> {
             cardLayout.show(mainPanel, "Converter");
-            btnMenuConv.setBackground(COLOR_BTN_OP);
-            btnMenuCalc.setBackground(COLOR_BTN_TOP);
+            btnMenuConv.setBase(COLOR_BTN_OP);
+            btnMenuCalc.setBase(COLOR_BTN_TOP);
         });
     }
 
-    private JButton createHeaderButton(String text, boolean active) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("SansSerif", Font.BOLD, 14));
-        btn.setForeground(COLOR_TEXT);
-        btn.setBackground(active ? COLOR_BTN_OP : COLOR_BTN_TOP);
-        btn.setFocusPainted(false);
-        btn.setBorderPainted(false);
-        return btn;
+    /** Tombol bulat dengan efek hover dan tekan. */
+    private static class RoundButton extends JButton {
+        private Color base;
+        private final int radius;
+        private boolean hover;
+
+        RoundButton(String text, int radius, Color base) {
+            super(text);
+            this.radius = radius;
+            this.base = base;
+            setForeground(Color.WHITE);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setContentAreaFilled(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) { hover = true; repaint(); }
+                @Override
+                public void mouseExited(MouseEvent e) { hover = false; repaint(); }
+            });
+        }
+
+        void setBase(Color c) {
+            base = c;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            Color c = base;
+            if (getModel().isPressed()) {
+                c = base.darker();
+            } else if (hover) {
+                c = new Color(Math.min(255, base.getRed() + 22),
+                              Math.min(255, base.getGreen() + 22),
+                              Math.min(255, base.getBlue() + 22));
+            }
+            g2.setColor(c);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), radius, radius);
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 
     private JPanel createCalculatorPanel() {
@@ -85,7 +142,7 @@ public class AppKalkulator extends JFrame {
         JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         badgeRow.setBackground(COLOR_BG);
 
-        JLabel historyBadge = new JLabel("🕒 Riwayat") {
+        historyBadge = new JLabel("🕒 Riwayat") {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -100,25 +157,24 @@ public class AppKalkulator extends JFrame {
         historyBadge.setForeground(COLOR_TEXT_MUTED);
         historyBadge.setBorder(new EmptyBorder(4, 10, 4, 10));
         historyBadge.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
         historyBadge.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 tampilkanDaftarRiwayat();
             }
         });
-
         badgeRow.add(historyBadge);
 
-        JTextField displayField = new JTextField("0");
+        displayField = new JTextField("0");
         displayField.setFont(new Font("SansSerif", Font.BOLD, 48));
         displayField.setForeground(COLOR_TEXT);
         displayField.setBackground(COLOR_BG);
         displayField.setHorizontalAlignment(JTextField.RIGHT);
-        displayField.setBorder(null);
+        displayField.setBorder(new EmptyBorder(8, 0, 4, 0));
         displayField.setEditable(false);
+        displayField.setCaretColor(COLOR_BG);
 
-        JLabel historyLabel = new JLabel(" ");
+        historyLabel = new JLabel(" ");
         historyLabel.setFont(new Font("SansSerif", Font.PLAIN, 18));
         historyLabel.setForeground(COLOR_TEXT_MUTED);
         historyLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -132,11 +188,12 @@ public class AppKalkulator extends JFrame {
         displayPanel.add(historyRow);
         calcPanel.add(displayPanel, BorderLayout.NORTH);
 
-        JPanel keypadPanel = new JPanel(new GridLayout(5, 4, 5, 5));
+        JPanel keypadPanel = new JPanel(new GridLayout(6, 4, 8, 8));
         keypadPanel.setBackground(COLOR_BG);
         keypadPanel.setBorder(new EmptyBorder(10, 20, 20, 20));
 
         String[] buttons = {
+            "√x", "x²", "x^y", "y√x",
             "AC", "+/-", "%", "÷",
             "7", "8", "9", "×",
             "4", "5", "6", "-",
@@ -144,139 +201,185 @@ public class AppKalkulator extends JFrame {
             "⌫", "0", ".", "="
         };
 
-        final double[] runningTotal = {0};
-        final String[] operator = {""};
-        final boolean[] mulaiInputBaru = {true};
-        final StringBuilder ekspresi = new StringBuilder();
-
         for (String text : buttons) {
-            JButton btn = new JButton(text);
-            btn.setFont(new Font("SansSerif", Font.PLAIN, 24));
-            btn.setFocusPainted(false);
-            btn.setBorderPainted(false);
-
-            if (text.matches("[÷×\\-\\+=]")) {
-                btn.setBackground(COLOR_BTN_OP);
-                btn.setForeground(COLOR_TEXT);
+            Color bg;
+            if (text.equals("=")) {
+                bg = COLOR_BTN_EQ;
+            } else if (text.matches("[÷×\\-\\+]")) {
+                bg = COLOR_BTN_OP;
+            } else if (text.matches("√x|x²|x\\^y|y√x")) {
+                bg = COLOR_BTN_FUNC;
             } else if (text.matches("AC|\\+/-|%|⌫")) {
-                btn.setBackground(COLOR_BTN_TOP);
-                btn.setForeground(COLOR_TEXT);
+                bg = COLOR_BTN_TOP;
             } else {
-                btn.setBackground(COLOR_BTN_NUM);
-                btn.setForeground(COLOR_TEXT);
+                bg = COLOR_BTN_NUM;
             }
 
-            btn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String cmd = e.getActionCommand();
-                    String currentText = displayField.getText();
-
-                    if (cmd.matches("[0-9]")) {
-                        if (mulaiInputBaru[0] || currentText.equals("0") || currentText.equals("Error")) {
-                            displayField.setText(cmd);
-                            mulaiInputBaru[0] = false;
-                        } else {
-                            if (currentText.replace("-", "").replace(".", "").length() < 15) {
-                                displayField.setText(currentText + cmd);
-                            }
-                        }
-                    } else if (cmd.equals(".")) {
-                        if (mulaiInputBaru[0] || currentText.equals("Error")) {
-                            displayField.setText("0.");
-                            mulaiInputBaru[0] = false;
-                        } else if (!currentText.contains(".")) {
-                            displayField.setText(currentText + ".");
-                        }
-                    } else if (cmd.equals("⌫")) {
-                        if (!mulaiInputBaru[0] && currentText.length() > 0 && !currentText.equals("Error")) {
-                            String newText = currentText.substring(0, currentText.length() - 1);
-                            if (newText.isEmpty() || newText.equals("-")) {
-                                displayField.setText("0");
-                                mulaiInputBaru[0] = true;
-                            } else {
-                                displayField.setText(newText);
-                            }
-                        }
-                    } else if (cmd.equals("+/-")) {
-                        if (!currentText.equals("0") && !currentText.equals("Error")) {
-                            if (currentText.startsWith("-")) {
-                                displayField.setText(currentText.substring(1));
-                            } else {
-                                displayField.setText("-" + currentText);
-                            }
-                        }
-                    } else if (cmd.equals("%")) {
-                        if (!currentText.equals("Error")) {
-                            double val = Double.parseDouble(currentText) / 100.0;
-                            displayField.setText(formatNumber(val));
-                        }
-                    } else if (cmd.equals("AC")) {
-                        displayField.setText("0");
-                        historyLabel.setText(" ");
-                        runningTotal[0] = 0;
-                        operator[0] = "";
-                        ekspresi.setLength(0);
-                        mulaiInputBaru[0] = true;
-                    } else if (cmd.matches("[÷×\\-\\+]")) {
-                        if (currentText.equals("Error")) return;
-
-                        double currentNum = Double.parseDouble(currentText);
-                        if (operator[0].isEmpty()) {
-                            runningTotal[0] = currentNum;
-                            ekspresi.append(formatNumber(currentNum)).append(" ").append(cmd).append(" ");
-                        } else if (mulaiInputBaru[0]) {
-                            if (ekspresi.length() >= 3) {
-                                ekspresi.setLength(ekspresi.length() - 2);
-                                ekspresi.append(cmd).append(" ");
-                            }
-                        } else {
-                            if (operator[0].equals("÷") && currentNum == 0) {
-                                displayField.setText("Error");
-                                operator[0] = "";
-                                ekspresi.setLength(0);
-                                mulaiInputBaru[0] = true;
-                                return;
-                            }
-                            runningTotal[0] = hitung(runningTotal[0], operator[0], currentNum);
-                            ekspresi.append(formatNumber(currentNum)).append(" ").append(cmd).append(" ");
-                            displayField.setText(formatNumber(runningTotal[0]));
-                        }
-                        operator[0] = cmd;
-                        historyLabel.setText(ekspresi.toString());
-                        mulaiInputBaru[0] = true;
-                    } else if (cmd.equals("=")) {
-                        if (!operator[0].isEmpty() && !currentText.equals("Error")) {
-                            double currentNum = Double.parseDouble(currentText);
-                            if (operator[0].equals("÷") && currentNum == 0) {
-                                displayField.setText("Error");
-                                historyLabel.setText("Tidak dapat dibagi 0");
-                                operator[0] = "";
-                                ekspresi.setLength(0);
-                                mulaiInputBaru[0] = true;
-                                return;
-                            }
-                            double hasil = hitung(runningTotal[0], operator[0], currentNum);
-                            ekspresi.append(formatNumber(currentNum));
-                            String itemRiwayat = ekspresi.toString() + " = " + formatNumber(hasil);
-                            riwayatOperasiList.add(itemRiwayat);
-
-                            historyLabel.setText(ekspresi.toString());
-                            displayField.setText(formatNumber(hasil));
-                            historyBadge.setText("🕒 " + formatNumber(hasil));
-                            operator[0] = "";
-                            ekspresi.setLength(0);
-                            mulaiInputBaru[0] = true;
-                        }
-                    }
-                }
-            });
-
+            RoundButton btn = new RoundButton(text, 22, bg);
+            btn.setFont(new Font("SansSerif", Font.PLAIN, text.length() > 2 ? 18 : 24));
+            btn.addActionListener(e -> tekanTombol(e.getActionCommand()));
             keypadPanel.add(btn);
         }
 
         calcPanel.add(keypadPanel, BorderLayout.CENTER);
         return calcPanel;
+    }
+
+    private void setDisplay(String text) {
+        displayField.setText(text);
+        int len = text.length();
+        int size = len > 18 ? 26 : len > 14 ? 32 : len > 11 ? 38 : len > 8 ? 44 : 48;
+        displayField.setFont(new Font("SansSerif", Font.BOLD, size));
+    }
+
+    private void resetState() {
+        operator = "";
+        ekspresi.setLength(0);
+        mulaiInputBaru = true;
+    }
+
+    private void tampilkanError(String pesan) {
+        setDisplay(ERROR);
+        historyLabel.setText(pesan);
+        runningTotal = 0;
+        resetState();
+    }
+
+    private boolean isBinary(String cmd) {
+        return cmd.matches("[÷×\\-\\+]") || cmd.equals("x^y") || cmd.equals("y√x");
+    }
+
+    /** Teks operator untuk riwayat di layar. */
+    private String simbol(String op) {
+        switch (op) {
+            case "x^y": return "^";
+            case "y√x": return "√";
+            default: return op;
+        }
+    }
+
+    private void tekanTombol(String cmd) {
+        String currentText = displayField.getText();
+        boolean error = currentText.equals(ERROR);
+
+        if (cmd.matches("[0-9]")) {
+            if (mulaiInputBaru || currentText.equals("0") || error) {
+                setDisplay(cmd);
+                mulaiInputBaru = false;
+            } else if (currentText.replace("-", "").replace(".", "").length() < MAX_DIGITS) {
+                setDisplay(currentText + cmd);
+            }
+        } else if (cmd.equals(".")) {
+            if (mulaiInputBaru || error) {
+                setDisplay("0.");
+                mulaiInputBaru = false;
+            } else if (!currentText.contains(".")) {
+                setDisplay(currentText + ".");
+            }
+        } else if (cmd.equals("⌫")) {
+            if (!mulaiInputBaru && !error) {
+                String newText = currentText.substring(0, currentText.length() - 1);
+                if (newText.isEmpty() || newText.equals("-")) {
+                    setDisplay("0");
+                    mulaiInputBaru = true;
+                } else {
+                    setDisplay(newText);
+                }
+            }
+        } else if (cmd.equals("+/-")) {
+            if (!error && !currentText.equals("0")) {
+                setDisplay(currentText.startsWith("-") ? currentText.substring(1) : "-" + currentText);
+            }
+        } else if (cmd.equals("AC")) {
+            setDisplay("0");
+            historyLabel.setText(" ");
+            runningTotal = 0;
+            resetState();
+        } else if (cmd.equals("%")) {
+            if (!error) {
+                setDisplay(formatNumber(Double.parseDouble(currentText) / 100.0));
+                mulaiInputBaru = true;
+            }
+        } else if (cmd.equals("√x") || cmd.equals("x²")) {
+            if (!error) fungsiUnary(cmd, Double.parseDouble(currentText));
+        } else if (isBinary(cmd)) {
+            if (!error) operatorBiner(cmd, Double.parseDouble(currentText));
+        } else if (cmd.equals("=")) {
+            if (!error && !operator.isEmpty()) samaDengan(Double.parseDouble(currentText));
+        }
+    }
+
+    private void fungsiUnary(String cmd, double val) {
+        double hasil;
+        String label;
+        if (cmd.equals("√x")) {
+            if (val < 0) {
+                tampilkanError("Akar bilangan negatif tidak valid");
+                return;
+            }
+            hasil = Math.sqrt(val);
+            label = "√(" + formatNumber(val) + ")";
+        } else {
+            hasil = val * val;
+            label = "sqr(" + formatNumber(val) + ")";
+        }
+        if (Double.isNaN(hasil) || Double.isInfinite(hasil)) {
+            tampilkanError("Hasil terlalu besar");
+            return;
+        }
+        String fmt = formatNumber(hasil);
+        riwayatOperasiList.add(label + " = " + fmt);
+        historyLabel.setText(label);
+        setDisplay(fmt);
+        historyBadge.setText("🕒 " + fmt);
+        mulaiInputBaru = true;
+    }
+
+    private void operatorBiner(String cmd, double currentNum) {
+        if (operator.isEmpty()) {
+            runningTotal = currentNum;
+            ekspresi.append(formatNumber(currentNum)).append(" ").append(simbol(cmd)).append(" ");
+        } else if (mulaiInputBaru) {
+            // ganti operator terakhir
+            ekspresi.setLength(ekspresi.length() - simbol(operator).length() - 1);
+            ekspresi.append(simbol(cmd)).append(" ");
+        } else {
+            double hasil = hitung(runningTotal, operator, currentNum);
+            if (Double.isNaN(hasil) || Double.isInfinite(hasil)) {
+                tampilkanError(pesanError(operator, currentNum));
+                return;
+            }
+            runningTotal = hasil;
+            ekspresi.append(formatNumber(currentNum)).append(" ").append(simbol(cmd)).append(" ");
+            setDisplay(formatNumber(runningTotal));
+        }
+        operator = cmd;
+        historyLabel.setText(ekspresi.toString());
+        mulaiInputBaru = true;
+    }
+
+    private void samaDengan(double currentNum) {
+        double hasil = hitung(runningTotal, operator, currentNum);
+        if (Double.isNaN(hasil) || Double.isInfinite(hasil)) {
+            tampilkanError(pesanError(operator, currentNum));
+            return;
+        }
+        ekspresi.append(formatNumber(currentNum));
+        String fmt = formatNumber(hasil);
+        riwayatOperasiList.add(ekspresi + " = " + fmt);
+
+        historyLabel.setText(ekspresi.toString());
+        setDisplay(fmt);
+        historyBadge.setText("🕒 " + fmt);
+        runningTotal = hasil;
+        resetState();
+    }
+
+    private String pesanError(String op, double b) {
+        if (op.equals("÷") && b == 0) return "Tidak dapat dibagi 0";
+        if (op.equals("y√x")) return "Akar tidak valid";
+        if (op.equals("x^y")) return "Pangkat tidak valid";
+        return "Hasil tidak valid";
     }
 
     private void tampilkanDaftarRiwayat() {
@@ -320,82 +423,188 @@ public class AppKalkulator extends JFrame {
         dialog.setVisible(true);
     }
 
+    /** Mengembalikan NaN/Infinity bila operasi tidak valid. */
     private double hitung(double a, String op, double b) {
         switch (op) {
             case "+": return a + b;
             case "-": return a - b;
             case "×": return a * b;
-            case "÷": return b != 0 ? a / b : 0;
+            case "÷": return b != 0 ? a / b : Double.NaN;
+            case "x^y": return Math.pow(a, b);
+            case "y√x": // akar ke-a dari b
+                if (a == 0) return Double.NaN;
+                if (b < 0) {
+                    // akar ganjil dari bilangan negatif masih valid
+                    boolean ganjil = a == Math.rint(a) && Math.abs(a % 2) == 1;
+                    return ganjil ? -Math.pow(-b, 1.0 / a) : Double.NaN;
+                }
+                return Math.pow(b, 1.0 / a);
             default: return b;
         }
     }
 
+    /** Format angka: dibulatkan 12 digit signifikan (menghilangkan 0.30000000000000004), eksponen untuk angka ekstrem. */
     private String formatNumber(double num) {
         if (Double.isNaN(num) || Double.isInfinite(num)) {
-            return "Error";
+            return ERROR;
         }
-        
-        String plainStr;
-        if (num == (long) num) {
-            plainStr = String.format("%d", (long) num);
-        } else {
-            plainStr = String.format("%s", num);
+        if (num == 0) return "0";
+
+        BigDecimal bd = new BigDecimal(num).round(new MathContext(12)).stripTrailingZeros();
+        double abs = Math.abs(num);
+        if (abs >= 1e12 || abs < 1e-9) {
+            String s = String.format("%.8e", bd.doubleValue());
+            // buang nol di belakang mantissa: 1.50000000e+15 -> 1.5e+15
+            int idx = s.indexOf('e');
+            String mant = s.substring(0, idx).replaceAll("0+$", "").replaceAll("\\.$", "");
+            return mant + s.substring(idx);
+        }
+        return bd.toPlainString();
+    }
+
+    /** Satu kategori konversi: nama unit + faktor ke unit dasar (suhu ditangani khusus). */
+    private static class Kategori {
+        final String nama;
+        final String[] unit;
+        final double[] faktor;
+
+        Kategori(String nama, String[] unit, double[] faktor) {
+            this.nama = nama;
+            this.unit = unit;
+            this.faktor = faktor;
         }
 
-        String digitsOnly = plainStr.replace("-", "").replace(".", "");
-        if (digitsOnly.length() > 10 || Math.abs(num) >= 1e10 || (Math.abs(num) > 0 && Math.abs(num) < 1e-6)) {
-            return String.format("%.4e", num);
+        double konversi(double val, int dari, int ke) {
+            if (nama.equals("Suhu")) {
+                double c = dari == 0 ? val : dari == 1 ? (val - 32) * 5 / 9 : val - 273.15;
+                return ke == 0 ? c : ke == 1 ? c * 9 / 5 + 32 : c + 273.15;
+            }
+            return val * faktor[dari] / faktor[ke];
         }
+    }
 
-        return plainStr;
+    private static final Kategori[] KATEGORI = {
+        new Kategori("Panjang",
+            new String[]{"mm", "cm", "m", "km", "inci", "kaki", "yard", "mil"},
+            new double[]{0.001, 0.01, 1, 1000, 0.0254, 0.3048, 0.9144, 1609.344}),
+        new Kategori("Massa",
+            new String[]{"mg", "g", "kg", "ton", "ons (oz)", "pon (lb)"},
+            new double[]{1e-6, 0.001, 1, 1000, 0.028349523125, 0.45359237}),
+        new Kategori("Suhu",
+            new String[]{"°C", "°F", "K"}, null),
+        new Kategori("Luas",
+            new String[]{"cm²", "m²", "km²", "hektar", "ft²", "acre"},
+            new double[]{1e-4, 1, 1e6, 1e4, 0.09290304, 4046.8564224}),
+        new Kategori("Volume",
+            new String[]{"mL", "L", "m³", "galon (US)", "cangkir (US)"},
+            new double[]{0.001, 1, 1000, 3.785411784, 0.2365882365}),
+        new Kategori("Waktu",
+            new String[]{"ms", "detik", "menit", "jam", "hari", "minggu"},
+            new double[]{0.001, 1, 60, 3600, 86400, 604800}),
+        new Kategori("Kecepatan",
+            new String[]{"m/s", "km/jam", "mph", "knot"},
+            new double[]{1, 1 / 3.6, 0.44704, 1852 / 3600.0}),
+        new Kategori("Data",
+            new String[]{"bit", "B", "KB", "MB", "GB", "TB"},
+            new double[]{0.125, 1, 1024, 1048576, 1073741824, 1099511627776.0})
+    };
+
+    private <T> JComboBox<T> createCombo(T[] items, int fontSize) {
+        JComboBox<T> combo = new JComboBox<>(items);
+        combo.setFont(new Font("SansSerif", Font.PLAIN, fontSize));
+        combo.setBackground(COLOR_BTN_TOP);
+        combo.setForeground(COLOR_TEXT);
+        combo.setFocusable(false);
+        combo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        combo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean hasFocus) {
+                JLabel l = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, hasFocus);
+                l.setBackground(isSelected ? COLOR_BTN_OP : COLOR_BTN_TOP);
+                l.setForeground(COLOR_TEXT);
+                l.setBorder(new EmptyBorder(4, 8, 4, 8));
+                return l;
+            }
+        });
+        return combo;
     }
 
     private JPanel createConverterPanel() {
         JPanel convPanel = new JPanel(new BorderLayout());
         convPanel.setBackground(COLOR_BG);
 
-        JPanel displayPanel = new JPanel(new GridLayout(3, 1));
-        displayPanel.setBackground(COLOR_BG);
-        displayPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        String[] namaKategori = new String[KATEGORI.length];
+        for (int i = 0; i < KATEGORI.length; i++) namaKategori[i] = KATEGORI[i].nama;
 
-        JLabel titleLabel = new JLabel("Length ▼");
-        titleLabel.setForeground(COLOR_TEXT);
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        titleLabel.setFont(new Font("SansSerif", Font.PLAIN, 18));
+        JComboBox<String> kategoriBox = createCombo(namaKategori, 16);
+        JComboBox<String> unitDari = createCombo(KATEGORI[0].unit, 16);
+        JComboBox<String> unitKe = createCombo(KATEGORI[0].unit, 16);
+        unitKe.setSelectedIndex(2);
 
-        JPanel row1 = new JPanel(new BorderLayout());
-        row1.setBackground(COLOR_BG);
         JTextField inputField = new JTextField("0");
         styleConverterTextField(inputField);
-        JLabel unit1 = new JLabel("ft ▼ ");
-        unit1.setForeground(COLOR_TEXT_MUTED);
-        unit1.setFont(new Font("SansSerif", Font.PLAIN, 18));
-        row1.add(inputField, BorderLayout.CENTER);
-        row1.add(unit1, BorderLayout.EAST);
-
-        JPanel row2 = new JPanel(new BorderLayout());
-        row2.setBackground(COLOR_BG);
+        inputField.setEditable(false);
         JTextField resultField = new JTextField("0");
         styleConverterTextField(resultField);
         resultField.setEditable(false);
         resultField.setForeground(COLOR_TEXT_MUTED);
-        JLabel unit2 = new JLabel("m ▼ ");
-        unit2.setForeground(COLOR_TEXT_MUTED);
-        unit2.setFont(new Font("SansSerif", Font.PLAIN, 18));
-        row2.add(resultField, BorderLayout.CENTER);
-        row2.add(unit2, BorderLayout.EAST);
 
-        displayPanel.add(titleLabel);
+        JPanel displayPanel = new JPanel();
+        displayPanel.setLayout(new BoxLayout(displayPanel, BoxLayout.Y_AXIS));
+        displayPanel.setBackground(COLOR_BG);
+        displayPanel.setBorder(new EmptyBorder(10, 20, 15, 20));
+
+        JPanel katRow = new JPanel(new BorderLayout());
+        katRow.setBackground(COLOR_BG);
+        katRow.setBorder(new EmptyBorder(0, 0, 10, 0));
+        katRow.add(kategoriBox, BorderLayout.CENTER);
+
+        JPanel row1 = new JPanel(new BorderLayout(10, 0));
+        row1.setBackground(COLOR_BG);
+        row1.add(inputField, BorderLayout.CENTER);
+        row1.add(unitDari, BorderLayout.EAST);
+
+        JPanel row2 = new JPanel(new BorderLayout(10, 0));
+        row2.setBackground(COLOR_BG);
+        row2.setBorder(new EmptyBorder(10, 0, 0, 0));
+        row2.add(resultField, BorderLayout.CENTER);
+        row2.add(unitKe, BorderLayout.EAST);
+
+        displayPanel.add(katRow);
         displayPanel.add(row1);
         displayPanel.add(row2);
         convPanel.add(displayPanel, BorderLayout.NORTH);
 
-        JPanel keypadPanel = new JPanel(new GridLayout(5, 3, 5, 5));
+        Runnable update = () -> {
+            int dari = unitDari.getSelectedIndex();
+            int ke = unitKe.getSelectedIndex();
+            if (dari < 0 || ke < 0) return;
+            try {
+                double val = Double.parseDouble(inputField.getText());
+                resultField.setText(formatNumber(KATEGORI[kategoriBox.getSelectedIndex()].konversi(val, dari, ke)));
+            } catch (NumberFormatException ex) {
+                resultField.setText("0");
+            }
+        };
+
+        kategoriBox.addActionListener(e -> {
+            Kategori k = KATEGORI[kategoriBox.getSelectedIndex()];
+            unitDari.setModel(new DefaultComboBoxModel<>(k.unit));
+            unitKe.setModel(new DefaultComboBoxModel<>(k.unit));
+            unitDari.setSelectedIndex(0);
+            unitKe.setSelectedIndex(Math.min(1, k.unit.length - 1));
+            update.run();
+        });
+        unitDari.addActionListener(e -> update.run());
+        unitKe.addActionListener(e -> update.run());
+
+        JPanel keypadPanel = new JPanel(new GridLayout(5, 3, 8, 8));
         keypadPanel.setBackground(COLOR_BG);
         keypadPanel.setBorder(new EmptyBorder(0, 20, 20, 20));
 
         String[] convBtns = {
-            "AC", "", "⇅",
+            "AC", "+/-", "⇅",
             "7", "8", "9",
             "4", "5", "6",
             "1", "2", "3",
@@ -403,49 +612,43 @@ public class AppKalkulator extends JFrame {
         };
 
         for (String text : convBtns) {
-            if (text.isEmpty()) {
-                JPanel emptyCell = new JPanel();
-                emptyCell.setBackground(COLOR_BG);
-                keypadPanel.add(emptyCell);
-                continue;
-            }
-
-            JButton btn = new JButton(text);
+            RoundButton btn = new RoundButton(text, 22, text.matches("AC|\\+/-|⇅|⌫") ? COLOR_BTN_TOP : COLOR_BTN_NUM);
             btn.setFont(new Font("SansSerif", Font.PLAIN, 24));
-            btn.setFocusPainted(false);
-            btn.setBorderPainted(false);
-            btn.setBackground(text.matches("AC|⇅") ? COLOR_BTN_TOP : COLOR_BTN_NUM);
-            btn.setForeground(COLOR_TEXT);
 
             btn.addActionListener(e -> {
                 String cmd = e.getActionCommand();
                 String curr = inputField.getText();
 
+                if (cmd.equals("⇅")) {
+                    int a = unitDari.getSelectedIndex();
+                    unitDari.setSelectedIndex(unitKe.getSelectedIndex());
+                    unitKe.setSelectedIndex(a);
+                    return;
+                }
+
                 if (cmd.matches("[0-9]")) {
-                    inputField.setText(curr.equals("0") ? cmd : curr + cmd);
+                    if (curr.replace("-", "").replace(".", "").length() < MAX_DIGITS) {
+                        inputField.setText(curr.equals("0") ? cmd : curr + cmd);
+                    }
                 } else if (cmd.equals("AC")) {
                     inputField.setText("0");
-                } else if (cmd.equals("⌫")) {
-                    if (curr.length() > 1) {
-                        inputField.setText(curr.substring(0, curr.length() - 1));
-                    } else {
-                        inputField.setText("0");
+                } else if (cmd.equals("+/-")) {
+                    if (!curr.equals("0")) {
+                        inputField.setText(curr.startsWith("-") ? curr.substring(1) : "-" + curr);
                     }
+                } else if (cmd.equals("⌫")) {
+                    String n = curr.substring(0, curr.length() - 1);
+                    inputField.setText(n.isEmpty() || n.equals("-") ? "0" : n);
                 } else if (cmd.equals(".") && !curr.contains(".")) {
                     inputField.setText(curr + ".");
                 }
-
-                try {
-                    double val = Double.parseDouble(inputField.getText());
-                    resultField.setText(formatNumber(val * 0.3048));
-                } catch (Exception ex) {
-                    resultField.setText("0");
-                }
+                update.run();
             });
 
             keypadPanel.add(btn);
         }
 
+        update.run();
         convPanel.add(keypadPanel, BorderLayout.CENTER);
         return convPanel;
     }
@@ -454,6 +657,7 @@ public class AppKalkulator extends JFrame {
         field.setFont(new Font("SansSerif", Font.PLAIN, 36));
         field.setForeground(COLOR_TEXT);
         field.setBackground(COLOR_BG);
+        field.setCaretColor(COLOR_BG);
         field.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, COLOR_BTN_TOP));
     }
 
