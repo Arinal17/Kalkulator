@@ -102,10 +102,9 @@ public class AppKalkulator extends JFrame {
         });
     }
 
-    /** Simbol tombol yang digambar manual supaya bentuknya seperti kalkulator asli. */
     private enum Glyph { NONE, AKAR, KUADRAT, PANGKAT, AKAR_Y, HAPUS }
 
-    /** Tombol rounded-rectangle dengan bayangan tipis, efek hover dan tekan. */
+    //Tombol rounded-rectangle dengan bayangan tipis, efek hover dan tekan.
     private static class RoundButton extends JButton {
         private Color base;
         private final int radius;
@@ -173,7 +172,6 @@ public class AppKalkulator extends JFrame {
             super.paintComponent(g);
         }
 
-        /** Menggambar x², xʸ, √x, ʸ√x, dan ikon hapus di tengah tombol. */
         private void gambarGlyph(Graphics2D g2) {
             double w = getWidth(), h = getHeight() - 3;
             float b = (float) (Math.min(w, h) * 0.34);   // ukuran huruf utama
@@ -330,7 +328,6 @@ public class AppKalkulator extends JFrame {
         }
     }
 
-    /** Teks di tombol (perintah internal tetap, hanya tampilannya yang dirapikan). */
     private static String labelTombol(String cmd) {
         switch (cmd) {
             case "-": return "−";
@@ -493,7 +490,7 @@ public class AppKalkulator extends JFrame {
         mulaiInputBaru = true;
     }
 
-    /** Teks riwayat dipotong dari kiri (diawali "…") kalau terlalu panjang untuk layar. */
+    //Teks riwayat dipotong dari kiri (diawali "…") kalau terlalu panjang untuk layar.
     private void setHistory(String teks) {
         FontMetrics fm = historyLabel.getFontMetrics(historyLabel.getFont());
         int maks = Math.max(200, displayField.getWidth() - 8);
@@ -517,7 +514,7 @@ public class AppKalkulator extends JFrame {
         return cmd.matches("[÷×\\-\\+]") || cmd.equals("x^y") || cmd.equals("y√x");
     }
 
-    /** Teks operator untuk riwayat di layar. */
+    //Teks operator untuk riwayat di layar.
     private String simbol(String op) {
         switch (op) {
             case "-": return "−";
@@ -531,14 +528,13 @@ public class AppKalkulator extends JFrame {
         return angka.startsWith("-") ? "−" + angka.substring(1) : angka;
     }
 
-    /** Teks sebuah operan di riwayat; angka negatif di tengah ekspresi diberi kurung. */
+    //Teks sebuah operan di riwayat; angka negatif di tengah ekspresi diberi kurung.
     private String labelOperan(double v) {
         if (operandLabel != null) return operandLabel;
         String s = rapikan(formatNumber(v));
         return (v < 0 && !ops.isEmpty()) ? "(" + s + ")" : s;
     }
 
-    /** Ekspresi yang sudah tersusun, mis. "2 + 3 × " atau "2 + 3 × 4". */
     private String bangunEkspresi() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < nilai.size(); i++) {
@@ -610,7 +606,7 @@ public class AppKalkulator extends JFrame {
         }
     }
 
-    /** √x dan x² langsung diterapkan ke angka di layar (operan saat ini), bukan menunggu "=". */
+    //√x dan x² langsung diterapkan ke angka di layar (operan saat ini), bukan menunggu "=".
     private void fungsiUnary(String cmd, double val) {
         if (pendingHasil != null) val = pendingHasil;   // untuk kasus √ lalu x² berturut-turut
         String dasar = operandLabel != null ? operandLabel : rapikan(formatNumber(val));
@@ -685,7 +681,7 @@ public class AppKalkulator extends JFrame {
         }
     }
 
-    /** Hitung seluruh ekspresi: pangkat/akar dulu, lalu × ÷, lalu + −. */
+    //Hitung seluruh ekspresi: pangkat/akar dulu, lalu × ÷, lalu + −.
     private double evaluasi() {
         List<Double> a = new ArrayList<>(nilai);
         List<String> o = new ArrayList<>(ops);
@@ -705,7 +701,7 @@ public class AppKalkulator extends JFrame {
         return a.get(0);
     }
 
-    /** Hitung operasi ke-i, lalu ganti kedua operannya dengan hasilnya. */
+    //Hitung operasi ke-i, lalu ganti kedua operannya dengan hasilnya.
     private void gabung(List<Double> a, List<String> o, int i) {
         double b = a.get(i + 1);
         double hasil = hitung(a.get(i), o.get(i), b);
@@ -766,7 +762,7 @@ public class AppKalkulator extends JFrame {
         dialog.setVisible(true);
     }
 
-    /** Mengembalikan NaN/Infinity bila operasi tidak valid. */
+    //Mengembalikan NaN/Infinity bila operasi tidak valid
     private double hitung(double a, String op, double b) {
         switch (op) {
             case "+": return a + b;
@@ -786,7 +782,6 @@ public class AppKalkulator extends JFrame {
         }
     }
 
-    /** Format angka: dibulatkan 12 digit signifikan (menghilangkan 0.30000000000000004), eksponen untuk angka ekstrem. */
     private String formatNumber(double num) {
         if (Double.isNaN(num) || Double.isInfinite(num)) {
             return ERROR;
@@ -805,7 +800,7 @@ public class AppKalkulator extends JFrame {
         return bd.toPlainString();
     }
 
-    /** Satu kategori konversi: nama unit + faktor ke unit dasar (suhu ditangani khusus). */
+    //Satu kategori konversi: nama unit + faktor ke unit dasar (suhu ditangani khusus)
     private static class Kategori {
         final String nama;
         final String[] unit;
