@@ -26,6 +26,18 @@ Tampilannya bertema terang dengan latar lavender, tombol berbentuk persegi membu
 
 ## 🎨 Tampilan
 
+<div align="center">
+<table>
+  <tr>
+    <td align="center"><b>Calculator</b></td>
+    <td align="center"><b>Converter</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/8f29eab5-798f-4198-89cc-8d01f4fe5b9c" alt="Tampilan mode Calculator" width="300"></td>
+    <td><img src="https://github.com/user-attachments/assets/35679d21-7ff6-467b-a6b8-1135d667c785" alt="Tampilan mode Converter" width="300"></td>
+  </tr>
+</table>
+</div>
 Tombol dikelompokkan berdasarkan fungsinya, masing-masing dengan warna sendiri:
 
 | Jenis tombol | Warna | Tombol |
