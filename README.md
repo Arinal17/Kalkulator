@@ -202,7 +202,7 @@ AppKalkulator.java
 | 3 | Arinal Haq | 250810701100073 |
 | 4 | Nawal Azqia | 250810701100092 |
 
-**Dosen Pengampu:** Maulyanda, S.Tr.Kom., M.Kom (NIP: 199708242024061001)
+**Dosen Pengampu:** Maulyanda, S.Tr.Kom., M.Kom 
 
 ---
 
