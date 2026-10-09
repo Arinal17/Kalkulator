@@ -22,6 +22,8 @@
 
 Tampilannya bertema terang dengan latar lavender, tombol berbentuk persegi membulat dengan bayangan tipis, serta aksen pink dan indigo. Setiap tombol punya efek *hover* dan *pressed*. Seluruh antarmuka digambar dengan komponen Swing, jadi tidak butuh library tambahan.
 
+Tujuan aplikasi ini adalah untuk menyediakan kalkulator ilmiah sederhana dan konverter satuan dalam sebuah aplikasi desktop berbasis Java Swing, sekaligus menerapkan konsep pemrograman GUI dan perhitungan presisi dengan BigDecimal.
+
 ---
 
 ## 🎨 Tampilan
@@ -158,6 +160,14 @@ javac -version
 3. Pilih **satuan asal** dan **satuan tujuan**.
 4. Ketik angka lewat keypad, dan hasil langsung muncul di baris bawah.
 5. Tekan **⇅** untuk menukar satuan asal dan tujuan.
+
+### Contoh Penggunaan
+
+| Skenario | Langkah | Hasil |
+|---|---|---|
+| Operasi berantai | `2` `+` `3` `×` `4` `=` | `14` |
+| Konversi panjang | Tab Converter → Panjang → km ke m → ketik `2.5` | `2500` |
+| Konversi suhu | Suhu → °C ke °F → ketik `100` | `212` |
 
 ---
 
